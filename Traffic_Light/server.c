@@ -110,24 +110,27 @@ int main(int argc, char **argv)
 		}
 
 		else  { //parent
-			if(clnt_sock[1]) {
-				while(1) {
-				read(fd1[0], next, sizeof(next));
-				read(fd1[0], stop, sizeof(next));
-				read(fd1[0], next, sizeof(stop));
+            if(clnt_sock[1]) {
+                while(1) {
+                read(fd1[0], next, sizeof(next));
+                read(fd1[0], stop, sizeof(next));
+                read(fd1[0], next, sizeof(stop));
 
-				printf("next : %.2f\n", next[0]);
-				sleep(next[0]);
-				strcpy(message, "Green on!");
-				write(clnt_sock[1], message, sizeof(message));
-				
-				printf("stop : %.2f\n\n", stop[0]);
-				sleep(stop[0]);
-				strcpy(message, "Red on!");
-				write(clnt_sock[1], message, sizeof(message));
-				}
-			}
-		}
+                printf("next : %.2f\n", next[0]);
+                printf("stop : %.2f\n\n", stop[0]);
+                for (int i = 1; i < n; i++)
+                {
+                    sleep(next[0]);
+                    strcpy(message, "Green on!");
+                    write(clnt_sock[i], message, sizeof(message));
+                
+                    sleep(stop[0]);
+                    strcpy(message, "Red on!");
+                    write(clnt_sock[i], message, sizeof(message));
+                }
+                }
+            }
+        }
 	}
 
 	close(serv_sock);
