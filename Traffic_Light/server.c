@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 	struct sigaction act;
 	int addr_size, str_len, state;
 	pid_t pid;
-	int fd1[2];
+	int fd1[2], fd2[2];
 	int distance[1] = {0};
 	double second = 0; 
 	double speed;
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 	if (listen(serv_sock, 5) == -1)
 		error_handling("listen() error");
 
-	if ( pipe(fd1) == -1 )
+	if ( pipe(fd1) == -1 || pipe(fd2) == -1)
 		error_handling("pipe() error");
 
 	while (1) {
@@ -64,12 +64,11 @@ int main(int argc, char **argv)
 		if (pid == 0) {     /* 자식 프로세스의 경우 */
 		
 			close(serv_sock);
-			if(count==1) {
-			if(clnt_sock[0]) {
-				start = clock();
-				while (1) {
+			while (1) {
+				if(count==1) {
+					start = clock();
 					read(clnt_sock[0], distance, BUFSIZE);
-					
+						
 					if(distance[0] <= 70 && distance[0] > 20) {
 						strcpy(message, "Red on!");
 						write(clnt_sock[0], message, sizeof(message));
@@ -89,9 +88,9 @@ int main(int argc, char **argv)
 						next[0] = 100 / speed;
 						printf("stop = %.2f\n", stop[0]);
 						printf("next = %.2f\n\n", next[0]);
+						write(fd1[1], next, sizeof(next));
+						usleep(10);
 						write(fd1[1], stop, sizeof(stop));
-						write(fd1[1], next, sizeof(next));
-						write(fd1[1], next, sizeof(next));
 
 						sleep(stop[0]);
 						strcpy(message, "Red on!");
@@ -104,7 +103,14 @@ int main(int argc, char **argv)
 						next[0] = 0.0;
 					}
 				}
-			}
+				else {
+					read(fd2[0], next, sizeof(next));
+                    strcpy(message, "Green on!");
+                    write(clnt_sock[count - 1], message, sizeof(message));
+                	read(fd2[0], stop, sizeof(stop));
+                    strcpy(message, "Red on!");
+                    write(clnt_sock[count - 1], message, sizeof(message));
+				}
 			}
 			return 0;
 		}
@@ -112,22 +118,14 @@ int main(int argc, char **argv)
 		else  { //parent
             if(clnt_sock[1]) {
                 while(1) {
-                read(fd1[0], next, sizeof(next));
-                read(fd1[0], stop, sizeof(next));
-                read(fd1[0], next, sizeof(stop));
-
-                printf("next : %.2f\n", next[0]);
-                printf("stop : %.2f\n\n", stop[0]);
-                for (int i = 1; i < n; i++)
-                {
-                    sleep(next[0]);
-                    strcpy(message, "Green on!");
-                    write(clnt_sock[i], message, sizeof(message));
-                
+					read(fd1[0], next, sizeof(stop));
+					sleep(next[0]);
+					write(fd2[1], next, sizeof(next));
+					read(fd1[0], stop, sizeof(stop));
                     sleep(stop[0]);
-                    strcpy(message, "Red on!");
-                    write(clnt_sock[i], message, sizeof(message));
-                }
+					write(fd2[1], stop, sizeof(stop));
+					// printf("next : %.2f\n", next[0]);
+					// printf("stop : %.2f\n\n", stop[0]);	                
                 }
             }
         }
