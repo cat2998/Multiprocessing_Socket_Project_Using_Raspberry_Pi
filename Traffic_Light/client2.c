@@ -6,6 +6,7 @@ int main(int argc, char **argv)
     pid_t pid;
     int i;
     int distances[1] = { 0.0 };
+    double speed, turn;
     
     char message[BUFSIZE];
     int str_len, recv_len, recv_num;
@@ -35,21 +36,45 @@ int main(int argc, char **argv)
     serv_addr.sin_port = htons(atoi(argv[2]));
 
     if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
-        error_handling("connect() error!");
+		error_handling("connect() error!");
 
-    while (1) {
-        read(sock, message, sizeof(message));
-        printf("from server : %s\n", message);
+	if ((pid = fork()) == -1) {
+		close(sock);
+	}
+	
+	if (pid == 0) 
+	{
+		while (1) {
+			read(sock, message, sizeof(message));
+			printf("from server : %s\n", message);
 
-        if (strcmp(message, "Red on!") == 0) {
+            speed = atof(message);
+            turn = 50 / speed;
+
+			printf("red on = %.2f\n", turn);
+			sleep(turn);
             Red_On();
-        }
-        else if (strcmp(message, "Green on!") == 0) {
+
+			printf("green on = %.2f\n", turn);
+			sleep(stop);
             Green_On();
-        }
-    }
-    
-    close(sock);
+
+            printf("red on = %.2f\n", turn);
+			sleep(turn);
+            Red_On();
+		}
+	}
+	else
+	{
+		while (1) {
+			distances[0] = Distance();
+			write(sock, distances, sizeof(distances));
+			sleep(1);
+		}
+	}
+
+	
+	close(sock);
     return 0;
 }
 
