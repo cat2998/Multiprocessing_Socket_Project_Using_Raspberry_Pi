@@ -47,6 +47,17 @@ int main(int argc, char **argv)
 	if ( pipe(fd1) == -1 || pipe(fd2) == -1)
 		error_handling("pipe() error");
 
+	pid=fork();
+
+	if(pid==0) {
+
+        while (1) {
+			read(fd1[0], speed, sizeof(speed));
+			write(fd2[1], speed, sizeof(speed));
+		}
+		return 0;
+    }
+
 	while (1) {
 		addr_size = sizeof(clnt_addr);
 		clnt_sock = accept(serv_sock, (struct sockaddr*)&clnt_addr, &addr_size);
@@ -124,21 +135,12 @@ int main(int argc, char **argv)
 						}
 						else if(distance[0] <= 5) {
 							flag = 0;
-							break;
 						}
 					}
 				}
 			}
 			return 0;
 		}
-
-		else  { //parent
-            while (1) {
-				read(fd1[0], speed, sizeof(speed));
-				write(fd2[1], speed, sizeof(speed));
-			}
-			return 0;
-        }
 	}
 
 	close(serv_sock);
